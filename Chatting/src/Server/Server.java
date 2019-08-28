@@ -13,6 +13,8 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
+import javax.swing.JScrollBar;
+import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
@@ -40,12 +42,14 @@ public class Server extends JFrame {
 		JLabel port_label = new JLabel("포트번호");
 		port_tf = new JTextField(10);
 		port_btn = new JButton("접속");
+		JScrollPane scroll = new JScrollPane(textArea);
 
 		con = getContentPane();
 		con.add(panel);
-
-		panel.add(textArea, "Center");
-		textArea.setPreferredSize(new Dimension(250, 420));
+		
+		
+		panel.add(scroll, "Center");
+		scroll.setPreferredSize(new Dimension(270, 420));
 		panel.add(port_label, "South");
 		panel.add(port_tf);
 		panel.add(port_btn);
@@ -76,6 +80,7 @@ public class Server extends JFrame {
 									try {
 										sc = ss.accept();
 										System.out.println("상대와 연결되었습니다" + sc.getInetAddress());
+										
 									} catch (Exception e) {
 										break;
 									}
@@ -92,7 +97,7 @@ public class Server extends JFrame {
 					port_btn.setText("접속");
 					try {
 						ss.close();
-						System.out.println("종료 성공!!");
+						textArea.append("접속종료!!\n");
 					} catch (IOException e1) {
 						e1.printStackTrace();
 					}
