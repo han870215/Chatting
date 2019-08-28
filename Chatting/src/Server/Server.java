@@ -4,16 +4,21 @@ import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JList;
 import javax.swing.JPanel;
-import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
@@ -23,6 +28,11 @@ public class Server extends JFrame {
 	// 서버 관련
 	ServerSocket ss;
 	Socket sc;
+	
+	// 클라이언트 관련
+	static ArrayList<Socket> clientSocket = new ArrayList<>();
+	static ArrayList<PrintWriter> clientWriter = new ArrayList<>();
+	
 
 	// GUI 관련
 	JTextArea textArea;
@@ -30,8 +40,8 @@ public class Server extends JFrame {
 	JButton port_btn;
 
 	public Server() {
-		init();
-		connect();
+		init(); // GUI 생성
+		connect(); // 접속/종료 버튼
 	}
 
 	void init() {
@@ -49,14 +59,17 @@ public class Server extends JFrame {
 		
 		
 		panel.add(scroll, "Center");
-		scroll.setPreferredSize(new Dimension(270, 420));
+		scroll.setPreferredSize(new Dimension(280, 430));
 		panel.add(port_label, "South");
 		panel.add(port_tf);
 		panel.add(port_btn);
 
-		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);// 닫으면 꺼지겠다.
+		setTitle("채팅서버");
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setSize(300, 500);
 		setVisible(true);
+		setResizable(false);
+		setLocationRelativeTo(null);
 	}
 
 	void connect() {
@@ -79,8 +92,12 @@ public class Server extends JFrame {
 								while (true) {
 									try {
 										sc = ss.accept();
-										System.out.println("상대와 연결되었습니다" + sc.getInetAddress());
-										
+										textArea.append(sc.getInetAddress() + " 입장하였습니다.\n");
+										clientSocket.add(sc);
+										PrintWriter p = new PrintWriter(sc.getOutputStream());
+										clientWriter.add(p);
+										textArea.append("현재인원은 [" + clientSocket.size() + "명] 입니다.\n");
+										new ChatManager(sc, p).start();										
 									} catch (Exception e) {
 										break;
 									}
@@ -104,10 +121,80 @@ public class Server extends JFrame {
 				}
 			}
 		});
-
+		
 	}
 
 	public static void main(String[] args) {
 		new Server();
+	}
+}
+
+class ChatManager extends Thread {
+	
+	Socket sc;
+	PrintWriter p;
+
+
+	public ChatManager(Socket sc, PrintWriter p) {
+		this.sc = sc;
+		this.p = p;
+	}
+
+	public void sendAll(String msg) {
+		for (PrintWriter writer : Server.clientWriter) {
+			/*
+			if (writer.equals(p))
+				continue;
+			*/
+			writer.println(msg);
+			writer.flush();
+		}
+	}
+
+	@Override
+	public void run() {
+		sendAll("'" + sc.getInetAddress() + "'님이 입장하셨습니다.");
+
+		BufferedReader reader = null;
+
+		try {
+			reader = new BufferedReader(new InputStreamReader(sc.getInputStream()));
+
+			String receiveMsg;
+
+			while (true) {
+				receiveMsg = reader.readLine();
+
+				if (receiveMsg == null) {
+					sendAll("'" + sc.getInetAddress() + "'가 나갔습니다.");
+					break;
+				}
+				sendAll(receiveMsg);
+
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if (reader != null)
+					reader.close();
+				if (Server.clientSocket.contains(sc)) {
+					Server.clientSocket.remove(sc);
+					System.out.println("소켓 현황 : " + Server.clientSocket.toString());
+				}
+				if (Server.clientSocket.contains(p)) {
+					Server.clientSocket.remove(p);
+					System.out.println("PrintWriter 현황 : " + Server.clientWriter.toString());
+				}
+				if (p != null) {
+					p.close();
+				}
+				if (sc != null) {
+					sc.close();
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 }
