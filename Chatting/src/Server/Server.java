@@ -28,11 +28,10 @@ public class Server extends JFrame {
 	// 서버 관련
 	ServerSocket ss;
 	Socket sc;
-	
+
 	// 클라이언트 관련
 	static ArrayList<Socket> clientSocket = new ArrayList<>();
 	static ArrayList<PrintWriter> clientWriter = new ArrayList<>();
-	
 
 	// GUI 관련
 	JTextArea textArea;
@@ -41,7 +40,7 @@ public class Server extends JFrame {
 
 	public Server() {
 		init(); // GUI 생성
-		connect(); // 접속/종료 버튼
+		actions(); // 접속/종료 버튼
 	}
 
 	void init() {
@@ -56,8 +55,7 @@ public class Server extends JFrame {
 
 		con = getContentPane();
 		con.add(panel);
-		
-		
+
 		panel.add(scroll, "Center");
 		scroll.setPreferredSize(new Dimension(280, 430));
 		panel.add(port_label, "South");
@@ -72,56 +70,78 @@ public class Server extends JFrame {
 		setLocationRelativeTo(null);
 	}
 
-	void connect() {
+	void actions() {
 		port_btn.addActionListener(new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
 
 				if (port_btn.getText().equals("접속")) {
-					port_btn.setText("종료");
-					int port = Integer.parseInt(port_tf.getText());
-					try {
-						ss = new ServerSocket(port);
-						
-						textArea.append("포트번호 : " + ss.getLocalPort() + "로 접속성공!!!\n");
-						Thread th = new Thread(new Runnable() {
-
-							@Override
-							public void run() {
-								while (true) {
-									try {
-										sc = ss.accept();
-										textArea.append(sc.getInetAddress() + " 입장하였습니다.\n");
-										clientSocket.add(sc);
-										PrintWriter p = new PrintWriter(sc.getOutputStream());
-										clientWriter.add(p);
-										textArea.append("현재인원은 [" + clientSocket.size() + "명] 입니다.\n");
-										new ChatManager(sc, p).start();										
-									} catch (Exception e) {
-										break;
-									}
-								}
-
-							}
-						});
-						th.start();
-					} catch (IOException e1) {
-						System.err.println("서버 종료!!");
-					}
+					
+					connect();
 
 				} else if (port_btn.getText().equals("종료")) {
-					port_btn.setText("접속");
-					try {
-						ss.close();
-						textArea.append("접속종료!!\n");
-					} catch (IOException e1) {
-						e1.printStackTrace();
-					}
+					
+					disconnect();
+					
 				}
 			}
 		});
-		
+
+		port_tf.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				connect();
+			}
+		});
+
+	}
+	
+	void connect() {
+		port_btn.setText("종료");
+		port_tf.setEditable(false);
+		port_tf.setEnabled(false);
+		int port = Integer.parseInt(port_tf.getText());
+		try {
+			ss = new ServerSocket(port);
+
+			textArea.append("포트번호 : " + ss.getLocalPort() + "로 접속성공!!!\n");
+			Thread th = new Thread(new Runnable() {
+
+				@Override
+				public void run() {
+					while (true) {
+						try {
+							sc = ss.accept();
+							textArea.append(sc.getInetAddress() + " 입장하였습니다.\n");
+							clientSocket.add(sc);
+							PrintWriter p = new PrintWriter(sc.getOutputStream());
+							clientWriter.add(p);
+							textArea.append("현재인원은 [" + clientSocket.size() + "명] 입니다.\n");
+							new ChatManager(sc, p).start();
+						} catch (Exception e) {
+							break;
+						}
+					}
+				}
+			});
+			th.start();
+		} catch (IOException e1) {
+			System.err.println("서버 종료!!");
+		}
+	}
+	
+	void disconnect() {
+		port_btn.setText("접속");
+		port_tf.setEditable(true);
+		port_tf.setEnabled(true);
+		try {
+			ss.close();
+			textArea.append("접속종료!!\n");
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
 	}
 
 	public static void main(String[] args) {
@@ -130,10 +150,9 @@ public class Server extends JFrame {
 }
 
 class ChatManager extends Thread {
-	
+
 	Socket sc;
 	PrintWriter p;
-
 
 	public ChatManager(Socket sc, PrintWriter p) {
 		this.sc = sc;
@@ -143,9 +162,8 @@ class ChatManager extends Thread {
 	public void sendAll(String msg) {
 		for (PrintWriter writer : Server.clientWriter) {
 			/*
-			if (writer.equals(p))
-				continue;
-			*/
+			 * if (writer.equals(p)) continue;
+			 */
 			writer.println(msg);
 			writer.flush();
 		}
