@@ -49,7 +49,7 @@ public class Server extends JFrame {
 		textArea = new JTextArea();
 		textArea.setEditable(false);
 		JLabel port_label = new JLabel("포트번호");
-		port_tf = new JTextField(10);
+		port_tf = new JTextField(14);
 		port_btn = new JButton("접속");
 		JScrollPane scroll = new JScrollPane(textArea);
 

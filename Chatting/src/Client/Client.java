@@ -2,7 +2,11 @@ package Client;
 
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.IOException;
 import java.net.Socket;
+import java.net.UnknownHostException;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -16,6 +20,8 @@ public class Client extends JFrame {
 	
 	// Socket 관련
 	Socket sc;
+	String ip;
+	int port;
 	
 	// GUI 관련
 	JTextField ip_tf;
@@ -26,6 +32,7 @@ public class Client extends JFrame {
 	
 	public Client() {
 		init();
+		action();
 	}
 	
 	void init(){
@@ -43,6 +50,9 @@ public class Client extends JFrame {
 		panel.add(port_label);
 		panel.add(port_tf);
 		panel.add(connect_btn);
+		
+		ip_tf.setText("127.0.0.1");
+		port_tf.setText("1111");
 		// Center
 		JTextArea textArea = new JTextArea();
 		JScrollPane scroll = new JScrollPane(textArea);
@@ -69,7 +79,38 @@ public class Client extends JFrame {
 		setResizable(false);
 		setLocationRelativeTo(null);
 	}
-
+	
+	void action() {
+		connect_btn.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if(connect_btn.getText().equals("접속")) {
+					ip_tf.setEditable(false);
+					ip_tf.setEnabled(false);
+					port_tf.setEditable(false);
+					port_tf.setEnabled(false);
+					ip = ip_tf.getText();
+					port = Integer.parseInt(port_tf.getText());
+					
+					connect_btn.setText("종료");
+					/*
+					try {
+						sc = new Socket(ip, port);
+					} catch (UnknownHostException e1) {
+	
+						e1.printStackTrace();
+					} catch (IOException e1) {
+	
+						e1.printStackTrace();
+					}
+					*/
+				} else if(connect_btn.getText().equals("종료")) {
+					System.exit(0);
+				}
+			}
+		});
+	}
 	public static void main(String[] args) {
 		
 		new Client();
